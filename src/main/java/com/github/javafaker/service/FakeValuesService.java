@@ -16,6 +16,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class FakeValuesService {
     private static final Pattern EXPRESSION_PATTERN = Pattern.compile("#\\{([a-zA-Z_.]+)\\s?(?:'([^']+)')?(?:,'([^']+)')*\\}");
@@ -331,6 +332,33 @@ public class FakeValuesService {
         }
 
         return resolveExpression(expression, current, root);
+    }
+    
+    public String resolve(Object current, Faker root, String ...keys){
+    	String key =  Arrays.stream(keys).collect(Collectors.joining("."));
+    	return resolve(key, current, root);
+    }
+    
+    /**
+     * Resolves a key to a method on an object and uses - if the key don't match to an method -
+     * the substitute key.
+     * 
+     * @param key the key for the method in EL-notation
+     * @param substituteKey the substitute key, if the key dont't match
+     * @param current the Object
+     * @param root the Faker instance
+     * @return the resolved string
+     */
+    public String resolve(String key, String substituteKey, Object current, Faker root){
+    	String expression = safeFetch(key, null);
+    	if (expression == null){
+    		expression = safeFetch(substituteKey, null);
+    	}
+    	if (expression == null){
+    		throw new RuntimeException(key + " AND " + substituteKey + " resulted in null expression");
+    	}
+    	
+    	return resolveExpression(expression, current, root);
     }
 
     /**
